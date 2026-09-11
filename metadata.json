@@ -1,0 +1,6 @@
+{
+  "name": "SSC 2028 Syllabus Tracker",
+  "description": "SSC 2028 Science syllabus and study progress tracker with exam filters, chapter milestones, and GPA goal management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
