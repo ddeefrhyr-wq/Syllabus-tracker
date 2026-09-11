@@ -1,0 +1,101 @@
+name: Build and Deploy Vite Web App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Static Web App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build static site (Vite)
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          test -f dist/index.html
+          echo "Verified dist/index.html exists:"
+          ls -lh dist/
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Upload general build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: syllabus-tracker-web-dist
+          path: dist/
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+
+      - name: Post Deployment Summary
+        if: always()
+        run: |
+          if [ "${{ steps.deployment.outcome }}" = "success" ]; then
+            echo "Deployment to GitHub Pages succeeded!"
+            echo "Site URL: ${{ steps.deployment.outputs.page_url }}"
+
+            cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## :rocket: Web App Deployed Successfully!
+
+          - **Live Application URL:** [${{ steps.deployment.outputs.page_url }}](${{ steps.deployment.outputs.page_url }})
+          - **Commit:** \`${GITHUB_SHA}\`
+          - **Triggered by:** \`${GITHUB_TRIGGERING_ACTOR}\`
+
+          Your static Syllabus Tracker application is live and hosted on GitHub Pages.
+          EOF
+          else
+            echo "Notice: Deployment step finished. If GitHub Pages is not yet enabled, configure it under Repository Settings -> Pages -> Source: GitHub Actions."
+
+            cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## :white_check_mark: Web App Build Succeeded
+
+          The Vite/React static build completed and generated all assets inside \`dist/\`.
+
+          ### To activate GitHub Pages hosting:
+          1. Go to repository **Settings** -> **Pages**.
+          2. Under **Build and deployment** -> **Source**, choose **GitHub Actions**.
+          3. Future pushes to \`main\` will automatically deploy your live site.
+
+          > **Build Artifact Available:** Download the static bundle directly from the Actions run artifacts (\`syllabus-tracker-web-dist\`).
+          EOF
+          fi
