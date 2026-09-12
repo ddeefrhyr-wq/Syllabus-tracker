@@ -44,3 +44,23 @@ export interface AppData {
   custom_exam_syllabuses: CustomExamSyllabus[];
   subjects: Subject[];
 }
+
+export interface UserSummaryRecord {
+  uid: string;
+  displayName: string;
+  email?: string;
+  phoneNumber?: string;
+  authProvider?: string;
+  photoURL?: string;
+  role?: 'student' | 'admin';
+  sscBatch?: string;
+  group?: string;
+  targetGpa?: string;
+  overallPercentage: number;
+  completedChapters: number;
+  totalChapters: number;
+  subjectPercentages: Record<string, { name: string; percentage: number; color?: string }>;
+  deviceStatus?: string;
+  lastActive: string;
+  createdAt?: string;
+}

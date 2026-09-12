@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "users": {
+      "title": "User",
+      "description": "User profile with syllabus sync info and role",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "authProvider": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string" },
+        "sscBatch": { "type": "string" },
+        "group": { "type": "string" },
+        "targetGpa": { "type": "string" },
+        "overallPercentage": { "type": "number" },
+        "completedChapters": { "type": "number" },
+        "totalChapters": { "type": "number" },
+        "subjectPercentages": { "type": "object" },
+        "deviceStatus": { "type": "string" },
+        "lastActive": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "displayName"]
+    },
+    "userData": {
+      "title": "UserData",
+      "description": "Full study progress and syllabus data for each user",
+      "type": "object",
+      "properties": {
+        "data": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["data", "updatedAt"]
+    }
+  }
+}

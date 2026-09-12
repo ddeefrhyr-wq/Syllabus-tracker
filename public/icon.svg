@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+  <!-- Background with smooth rounded rect -->
+  <rect width="512" height="512" rx="112" fill="#0f172a" />
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#grad)" filter="url(#shadow)" />
+  
+  <!-- Graduation Cap & Syllabus Tracking Emblem -->
+  <g fill="#ffffff" transform="translate(256, 230) scale(1.1)">
+    <!-- Cap top diamond -->
+    <polygon points="0,-90 140,-35 0,20 -140,-35" opacity="0.98" />
+    <!-- Cap skull cap base -->
+    <path d="M-85,-10 C-85,45 85,45 85,-10 L85,5 C85,60 -85,60 -85,5 Z" />
+    <!-- Tassel string & drop -->
+    <path d="M0,-35 L125,-25 L135,50" fill="none" stroke="#fde047" stroke-width="8" stroke-linecap="round" />
+    <circle cx="135" cy="62" r="10" fill="#fde047" />
+  </g>
+
+  <!-- Open Study Book & Progress Checkmarks -->
+  <g fill="#ffffff" transform="translate(256, 360)">
+    <!-- Open pages -->
+    <path d="M-110,-40 C-60,-50 -20,-30 0,-15 C20,-30 60,-50 110,-40 L110,40 C60,30 20,48 0,60 C-20,48 -60,30 -110,40 Z" fill="#ffffff" opacity="0.95" />
+    <path d="M0,-15 L0,60" stroke="#6366f1" stroke-width="4" stroke-linecap="round" />
+    <!-- Mini progress lines on pages -->
+    <line x1="-85" y1="-15" x2="-25" y2="-10" stroke="#6366f1" stroke-width="5" stroke-linecap="round" />
+    <line x1="-85" y1="5" x2="-25" y2="10" stroke="#6366f1" stroke-width="5" stroke-linecap="round" />
+    <line x1="25" y1="-10" x2="85" y2="-15" stroke="#10b981" stroke-width="5" stroke-linecap="round" />
+    <line x1="25" y1="10" x2="85" y2="5" stroke="#10b981" stroke-width="5" stroke-linecap="round" />
+  </g>
+</svg>

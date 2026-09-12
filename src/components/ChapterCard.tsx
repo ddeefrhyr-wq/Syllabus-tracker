@@ -8,6 +8,8 @@ interface ChapterCardProps {
   subjectColor: string;
   syllabuses: CustomExamSyllabus[];
   activeExamId: string;
+  isAdminMode?: boolean;
+  onRequireAdmin?: (action: () => void) => void;
   onToggleMilestone: (chapterId: string, milestoneKey: keyof ProgressBreakdown) => void;
   onSetAllMilestones: (chapterId: string, value: boolean) => void;
   onToggleExamInclusion: (chapterId: string, examId: string) => void;
@@ -21,6 +23,8 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
   subjectColor,
   syllabuses,
   activeExamId,
+  isAdminMode = false,
+  onRequireAdmin,
   onToggleMilestone,
   onSetAllMilestones,
   onToggleExamInclusion,
@@ -184,26 +188,46 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
                 </button>
                 <button
                   type="button"
+                  id={`edit-chapter-${chapter.chapter_id}`}
                   onClick={() => {
-                    onEditChapter(chapter);
                     setShowMenu(false);
+                    if (!isAdminMode && onRequireAdmin) {
+                      onRequireAdmin(() => onEditChapter(chapter));
+                    } else {
+                      onEditChapter(chapter);
+                    }
                   }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2"
+                  className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between gap-2"
                 >
-                  <Edit2 className="w-3.5 h-3.5 text-blue-500" />
-                  অধ্যায় সম্পাদনা
+                  <div className="flex items-center gap-2">
+                    <Edit2 className="w-3.5 h-3.5 text-blue-500" />
+                    <span>অধ্যায় সম্পাদনা</span>
+                  </div>
+                  {!isAdminMode && (
+                    <span className="text-[10px] text-slate-400 font-medium">এডমিন</span>
+                  )}
                 </button>
                 <div className="my-1 border-t border-slate-100" />
                 <button
                   type="button"
+                  id={`delete-chapter-${chapter.chapter_id}`}
                   onClick={() => {
-                    onDeleteChapter(chapter.chapter_id);
                     setShowMenu(false);
+                    if (!isAdminMode && onRequireAdmin) {
+                      onRequireAdmin(() => onDeleteChapter(chapter.chapter_id));
+                    } else {
+                      onDeleteChapter(chapter.chapter_id);
+                    }
                   }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-2"
+                  className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 flex items-center justify-between gap-2"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  অধ্যায় মুছে ফেলুন
+                  <div className="flex items-center gap-2">
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>অধ্যায় মুছে ফেলুন</span>
+                  </div>
+                  {!isAdminMode && (
+                    <span className="text-[10px] text-red-400 font-medium">এডমিন</span>
+                  )}
                 </button>
               </div>
             )}

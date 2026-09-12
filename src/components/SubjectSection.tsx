@@ -9,6 +9,8 @@ interface SubjectSectionProps {
   syllabuses: CustomExamSyllabus[];
   searchQuery: string;
   statusFilter: 'ALL' | 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED';
+  isAdminMode?: boolean;
+  onRequireAdmin?: (action: () => void) => void;
   onToggleMilestone: (chapterId: string, milestoneKey: keyof ProgressBreakdown) => void;
   onSetAllMilestones: (chapterId: string, value: boolean) => void;
   onToggleExamInclusion: (chapterId: string, examId: string) => void;
@@ -25,6 +27,8 @@ export const SubjectSection: React.FC<SubjectSectionProps> = ({
   syllabuses,
   searchQuery,
   statusFilter,
+  isAdminMode = false,
+  onRequireAdmin,
   onToggleMilestone,
   onSetAllMilestones,
   onToggleExamInclusion,
@@ -135,12 +139,21 @@ export const SubjectSection: React.FC<SubjectSectionProps> = ({
             <button
               type="button"
               id={`add-chapter-to-${subject.subject_id}`}
-              onClick={() => onAddChapterToSubject(subject.subject_id)}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-95 shadow-2xs"
+              onClick={() => {
+                if (!isAdminMode && onRequireAdmin) {
+                  onRequireAdmin(() => onAddChapterToSubject(subject.subject_id));
+                } else {
+                  onAddChapterToSubject(subject.subject_id);
+                }
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-95 shadow-2xs cursor-pointer"
               style={{ backgroundColor: subject.theme_color }}
             >
               <Plus className="w-3.5 h-3.5" />
               <span>অধ্যায় যোগ</span>
+              {!isAdminMode && (
+                <span className="text-[9px] bg-black/20 px-1 py-0.2 rounded font-normal">এডমিন</span>
+              )}
             </button>
           </div>
         </div>
@@ -157,6 +170,8 @@ export const SubjectSection: React.FC<SubjectSectionProps> = ({
                 subjectColor={subject.theme_color}
                 syllabuses={syllabuses}
                 activeExamId={activeExamId}
+                isAdminMode={isAdminMode}
+                onRequireAdmin={onRequireAdmin}
                 onToggleMilestone={onToggleMilestone}
                 onSetAllMilestones={onSetAllMilestones}
                 onToggleExamInclusion={onToggleExamInclusion}
@@ -179,8 +194,14 @@ export const SubjectSection: React.FC<SubjectSectionProps> = ({
               <div className="flex items-center justify-center gap-2 mt-3">
                 <button
                   type="button"
-                  onClick={() => onAddChapterToSubject(subject.subject_id)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                  onClick={() => {
+                    if (!isAdminMode && onRequireAdmin) {
+                      onRequireAdmin(() => onAddChapterToSubject(subject.subject_id));
+                    } else {
+                      onAddChapterToSubject(subject.subject_id);
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer"
                 >
                   + নতুন অধ্যায় যোগ করুন
                 </button>

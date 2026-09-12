@@ -11,6 +11,7 @@ interface OverallStatsSummaryProps {
   statusFilter: 'ALL' | 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED';
   onStatusFilterChange: (status: 'ALL' | 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED') => void;
   onAddSubject: () => void;
+  isAdminMode?: boolean;
 }
 
 export const OverallStatsSummary: React.FC<OverallStatsSummaryProps> = ({
@@ -22,6 +23,7 @@ export const OverallStatsSummary: React.FC<OverallStatsSummaryProps> = ({
   statusFilter,
   onStatusFilterChange,
   onAddSubject,
+  isAdminMode = false,
 }) => {
   const currentExam = syllabuses.find(s => s.exam_id === activeExamId);
   const examTitle = currentExam ? currentExam.exam_title : 'সমগ্র সিলেবাস (All Chapters)';
@@ -187,9 +189,15 @@ export const OverallStatsSummary: React.FC<OverallStatsSummaryProps> = ({
             type="button"
             id="add-subject-btn"
             onClick={onAddSubject}
-            className="ml-auto sm:ml-2 px-2.5 py-1 text-xs rounded-md font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shrink-0 shadow-2xs"
+            className="ml-auto sm:ml-2 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors shrink-0 shadow-2xs cursor-pointer"
+            title={isAdminMode ? 'নতুন বিষয় যোগ করুন' : 'নতুন বিষয় যোগ করতে এডমিন মোড সক্রিয় করুন'}
           >
-            + নতুন বিষয়
+            <span>+ নতুন বিষয়</span>
+            {!isAdminMode && (
+              <span className="text-[10px] bg-slate-100 text-slate-500 px-1 py-0.2 rounded font-medium">
+                এডমিন
+              </span>
+            )}
           </button>
         </div>
       </div>
