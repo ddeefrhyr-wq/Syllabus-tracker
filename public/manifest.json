@@ -25,6 +25,12 @@
       "purpose": "any"
     },
     {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
       "src": "/pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
@@ -61,7 +67,7 @@
       "short_name": "Syllabus",
       "description": "View and track SSC 2028 chapters progress",
       "url": "/",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
     }
   ]
 }

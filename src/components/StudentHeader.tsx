@@ -129,6 +129,44 @@ export const StudentHeader: React.FC<StudentHeaderProps> = ({
 
   return (
     <header className="bg-white border-b border-slate-200 shadow-xs relative">
+      {/* Top Application Navigation Bar with Logo Icon */}
+      <div className="bg-slate-900 text-white border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src="/icon.svg"
+              alt="Study Tracker Logo"
+              id="navbar-app-logo"
+              className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-xl shadow-md object-contain shrink-0 ring-1 ring-white/20 hover:scale-105 transition-transform"
+            />
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm sm:text-base text-white tracking-tight">
+                Study Tracker
+              </span>
+              <span className="text-[10px] sm:text-[11px] font-semibold bg-indigo-500/25 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-full">
+                SSC 2028
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              id="navbar-app-info-btn"
+              onClick={handleAppInfoClick}
+              className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              title="অ্যাপের পরিচিতি ও ব্যবহার নির্দেশিকা"
+            >
+              <Info className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">অ্যাপ পরিচিতি</span>
+            </button>
+            <div className="hidden sm:block">
+              <PWAInstallButton />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Optional top admin bar when active */}
       {isAdminMode && (
         <div

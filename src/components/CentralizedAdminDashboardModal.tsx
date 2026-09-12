@@ -174,14 +174,16 @@ export const CentralizedAdminDashboardModal: React.FC<CentralizedAdminDashboardM
         {/* Top Header */}
         <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white px-6 py-5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-              <ShieldCheck className="w-6 h-6 text-emerald-400" />
-            </div>
+            <img
+              src="/icon.svg"
+              alt="Study Tracker Logo"
+              className="w-11 h-11 rounded-2xl shadow-md shrink-0 object-contain ring-1 ring-white/20"
+            />
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold">সেন্ট্রালাইজড এডমিন ড্যাশবোর্ড (Central Admin Hub)</h2>
+                <h2 className="text-base sm:text-lg font-bold">Study Tracker • সেন্ট্রাল এডমিন হাব</h2>
                 <span className="text-[10px] bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full font-semibold">
-                  LIVE REAL-TIME
+                  LIVE
                 </span>
               </div>
               <p className="text-xs text-indigo-200">

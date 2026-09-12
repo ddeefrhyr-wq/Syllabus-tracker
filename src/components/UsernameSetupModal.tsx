@@ -149,9 +149,11 @@ export const UsernameSetupModal: React.FC<UsernameSetupModalProps> = ({
         {/* Header - Unclosable */}
         <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 px-6 py-5 text-white">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-amber-300 shrink-0 shadow-inner">
-              <AtSign className="w-6 h-6" />
-            </div>
+            <img
+              src="/icon.svg"
+              alt="Study Tracker Logo"
+              className="w-11 h-11 rounded-2xl shadow-md shrink-0 object-contain ring-1 ring-white/20"
+            />
             <div>
               <div className="flex items-center gap-1.5">
                 <h2 className="text-base font-bold text-white leading-tight">

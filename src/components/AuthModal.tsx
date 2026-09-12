@@ -185,9 +185,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 px-6 py-5 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-indigo-300">
-              <Sparkles className="w-5 h-5 text-amber-300" />
-            </div>
+            <img
+              src="/icon.svg"
+              alt="Study Tracker Logo"
+              className="w-10 h-10 rounded-xl shadow-md shrink-0 object-contain ring-1 ring-white/20"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold leading-tight">

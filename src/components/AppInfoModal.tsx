@@ -28,12 +28,14 @@ export const AppInfoModal: React.FC<AppInfoModalProps> = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 px-6 py-5 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-indigo-200">
-              <Info className="w-6 h-6" />
-            </div>
+            <img
+              src="/icon.svg"
+              alt="Study Tracker Logo"
+              className="w-11 h-11 rounded-xl shadow-md shrink-0 object-contain ring-1 ring-white/20"
+            />
             <div>
-              <h3 className="text-base font-bold text-white">অ্যাপ তথ্য (App Info)</h3>
-              <p className="text-xs text-indigo-200">SSC 2028 সিলেবাস ট্র্যাকার</p>
+              <h3 className="text-base font-bold text-white">Study Tracker — অ্যাপ তথ্য</h3>
+              <p className="text-xs text-indigo-200">SSC 2028 সিলেবাস ও প্রোগ্রেস ড্যাশবোর্ড</p>
             </div>
           </div>
           <button
