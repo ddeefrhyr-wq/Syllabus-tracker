@@ -16,6 +16,7 @@ import { ResetProgressModal } from './components/ResetProgressModal';
 import { AppInfoModal } from './components/AppInfoModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { AuthModal } from './components/AuthModal';
+import { UsernameSetupModal } from './components/UsernameSetupModal';
 import { ExportSnapshotModal } from './components/ExportSnapshotModal';
 import { CentralizedAdminDashboardModal } from './components/CentralizedAdminDashboardModal';
 import { useAuth } from './context/AuthContext';
@@ -25,7 +26,7 @@ import { BookOpen, Sparkles, CheckCircle2, Award, Cloud } from 'lucide-react';
 const STORAGE_KEY = 'ssc_2028_tracker_data_v1';
 
 export default function App() {
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading, userUsername, needsUsernameSetup } = useAuth();
 
   // Load initial data from localStorage if available
   const [data, setData] = useState<AppData>(() => {
@@ -42,6 +43,20 @@ export default function App() {
     }
     return INITIAL_APP_DATA;
   });
+
+  // Sync username into student_profile if present
+  useEffect(() => {
+    if (userUsername && data.student_profile.username !== userUsername) {
+      setData((prev) => ({
+        ...prev,
+        student_profile: {
+          ...prev.student_profile,
+          username: userUsername,
+          full_name: currentUser?.displayName || prev.student_profile.full_name,
+        },
+      }));
+    }
+  }, [userUsername, currentUser?.displayName]);
 
   // Save to localStorage
   useEffect(() => {
@@ -225,6 +240,7 @@ export default function App() {
         const summaryData: UserSummaryRecord = {
           uid: currentUser.uid,
           displayName: currentUser.displayName || data.student_profile.full_name || 'শিক্ষার্থী',
+          username: userUsername || data.student_profile.username || undefined,
           email: currentUser.email || undefined,
           phoneNumber: currentUser.phoneNumber || undefined,
           authProvider: currentUser.providerData?.[0]?.providerId || 'password',
@@ -863,10 +879,23 @@ export default function App() {
         }}
       />
 
+      {/* Mandatory Auth Modal when not signed in, or voluntary when clicked */}
       <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        isOpen={!currentUser || isAuthModalOpen}
+        onClose={() => {
+          if (currentUser) {
+            setIsAuthModalOpen(false);
+          }
+        }}
+        isMandatory={!currentUser}
       />
+
+      {/* Mandatory Unique Username Setup Modal if signed in but no username chosen yet */}
+      {currentUser && (
+        <UsernameSetupModal
+          isOpen={needsUsernameSetup}
+        />
+      )}
 
       <ExportSnapshotModal
         isOpen={isSnapshotModalOpen}

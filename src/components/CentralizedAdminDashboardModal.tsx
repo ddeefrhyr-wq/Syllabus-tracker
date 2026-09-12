@@ -20,6 +20,7 @@ import {
   BookOpen,
   Award,
   AlertTriangle,
+  AtSign,
 } from 'lucide-react';
 
 interface CentralizedAdminDashboardModalProps {
@@ -80,6 +81,7 @@ export const CentralizedAdminDashboardModal: React.FC<CentralizedAdminDashboardM
     const q = searchQuery.toLowerCase();
     return (
       u.displayName.toLowerCase().includes(q) ||
+      (u.username && u.username.toLowerCase().includes(q)) ||
       (u.email && u.email.toLowerCase().includes(q)) ||
       (u.phoneNumber && u.phoneNumber.toLowerCase().includes(q)) ||
       (u.sscBatch && u.sscBatch.toLowerCase().includes(q))
@@ -286,6 +288,11 @@ export const CentralizedAdminDashboardModal: React.FC<CentralizedAdminDashboardM
                             <h4 className="text-sm font-bold text-slate-900 leading-tight">
                               {student.displayName}
                             </h4>
+                            {student.username && (
+                              <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded font-mono">
+                                @{student.username}
+                              </span>
+                            )}
                             {student.role === 'admin' && (
                               <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">
                                 এডমিন
@@ -361,13 +368,26 @@ export const CentralizedAdminDashboardModal: React.FC<CentralizedAdminDashboardM
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-bold text-slate-900">{selectedUser.displayName}</h3>
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span>{selectedUser.displayName}</span>
+                    {selectedUser.username && (
+                      <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full font-mono">
+                        @{selectedUser.username}
+                      </span>
+                    )}
+                  </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
                     SSC ব্যাচ: <strong>{selectedUser.sscBatch || '2028'}</strong> | বিভাগ:{' '}
                     <strong>{selectedUser.group || 'বিজ্ঞান (Science)'}</strong>
                   </p>
 
                   <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">ইউজারনেম (Handle):</span>
+                      <span className="font-mono font-semibold text-indigo-700">
+                        {selectedUser.username ? `@${selectedUser.username}` : 'নির্ধারিত হয়নি'}
+                      </span>
+                    </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400">যোগাযোগ / আইডি:</span>
                       <span className="font-mono text-slate-700">{selectedUser.email || selectedUser.phoneNumber || selectedUser.uid.slice(0, 10)}</span>

@@ -9,6 +9,9 @@ import {
   signOut as fbSignOut,
   onAuthStateChanged,
   updateProfile as fbUpdateProfile,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult,
   User,
 } from 'firebase/auth';
 import {
@@ -16,12 +19,16 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs,
   onSnapshot,
   collection,
   query,
+  where,
+  limit,
   orderBy,
   deleteDoc,
   serverTimestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
 
@@ -38,7 +45,7 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || undefi
 export const googleProvider = new GoogleAuthProvider();
 export const facebookProvider = new FacebookAuthProvider();
 
-// Export auth helpers
+// Export auth & firestore helpers
 export {
   signInWithPopup,
   signInWithEmailAndPassword,
@@ -46,14 +53,21 @@ export {
   fbSignOut,
   onAuthStateChanged,
   fbUpdateProfile,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
   doc,
   setDoc,
   getDoc,
+  getDocs,
   onSnapshot,
   collection,
   query,
+  where,
+  limit,
   orderBy,
   deleteDoc,
   serverTimestamp,
+  runTransaction,
 };
-export type { User };
+export type { User, ConfirmationResult };
+

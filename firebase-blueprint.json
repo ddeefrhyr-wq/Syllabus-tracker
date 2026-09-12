@@ -2,11 +2,12 @@
   "entities": {
     "users": {
       "title": "User",
-      "description": "User profile with syllabus sync info and role",
+      "description": "User profile with syllabus sync info, unique username and role",
       "type": "object",
       "properties": {
         "uid": { "type": "string" },
         "displayName": { "type": "string" },
+        "username": { "type": "string" },
         "email": { "type": "string" },
         "phoneNumber": { "type": "string" },
         "authProvider": { "type": "string" },
@@ -24,6 +25,16 @@
         "createdAt": { "type": "string" }
       },
       "required": ["uid", "displayName"]
+    },
+    "usernames": {
+      "title": "UsernameRegistry",
+      "description": "Unique username reservations mapped to user uid",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid"]
     },
     "userData": {
       "title": "UserData",

@@ -21,6 +21,8 @@ import {
   Cloud,
   CloudOff,
   LayoutDashboard,
+  X,
+  AtSign,
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -67,23 +69,30 @@ export const StudentHeader: React.FC<StudentHeaderProps> = ({
   onOpenCentralAdminHub,
   onOpenAuthModal,
 }) => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, userUsername, logout } = useAuth();
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Close menu when clicking outside
+  // Close menu when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowOptionsMenu(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowOptionsMenu(false);
+      }
+    };
     if (showOptionsMenu) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [showOptionsMenu]);
 
@@ -172,8 +181,13 @@ export const StudentHeader: React.FC<StudentHeaderProps> = ({
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                  {displayName}
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span>{displayName}</span>
+                  {userUsername && (
+                    <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full font-mono">
+                      @{userUsername}
+                    </span>
+                  )}
                 </h1>
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                   <Award className="w-3.5 h-3.5 text-emerald-600" />
@@ -312,162 +326,230 @@ export const StudentHeader: React.FC<StudentHeaderProps> = ({
                 <MoreVertical className="w-4 h-4" />
               </button>
 
+              {/* Hidden File Input for JSON Restore */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={onImportData}
+                accept=".json"
+                className="hidden"
+                id="header-json-file-input"
+              />
+
               {showOptionsMenu && (
-                <div
-                  id="header-options-dropdown"
-                  className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
-                >
-                  <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      মেনু অপশন
-                    </p>
-                    <span className="text-[10px] text-indigo-600 font-semibold">
-                      v2.4
-                    </span>
-                  </div>
+                <>
+                  {/* Backdrop overlay on mobile: ensures clicks outside close menu cleanly */}
+                  <div
+                    className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-50 sm:hidden animate-in fade-in duration-150"
+                    onClick={() => setShowOptionsMenu(false)}
+                    aria-hidden="true"
+                  />
 
-                  {/* Option 1: Admin View */}
-                  <button
-                    type="button"
-                    id="menu-admin-view-btn"
-                    onClick={handleAdminOptionClick}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center justify-between transition-colors hover:bg-slate-50 ${
-                      isAdminMode ? 'text-indigo-700 bg-indigo-50/50' : 'text-slate-700'
-                    }`}
+                  {/* Dropdown Menu Container: Centered modal on mobile, right-aligned popover on sm+ */}
+                  <div
+                    id="header-options-dropdown"
+                    className="fixed sm:absolute top-1/2 -translate-y-1/2 sm:translate-y-0 sm:top-full left-4 right-4 sm:left-auto sm:right-0 sm:mt-2 w-auto sm:w-80 max-w-sm sm:max-w-none mx-auto sm:mx-0 bg-white rounded-2xl shadow-2xl border border-slate-200/90 py-1.5 z-50 max-h-[88vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150"
                   >
-                    <div className="flex items-center gap-2.5">
+                    {/* Header */}
+                    <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 rounded-t-2xl">
+                      <div className="flex items-center gap-2">
+                        <MoreVertical className="w-4 h-4 text-slate-500 shrink-0" />
+                        <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          মেনু ও অপশন
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-full border border-indigo-100">
+                          v2.4
+                        </span>
+                        {/* Mobile Close Button */}
+                        <button
+                          type="button"
+                          onClick={() => setShowOptionsMenu(false)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors sm:hidden cursor-pointer"
+                          aria-label="Close menu"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Option 1: Admin View */}
+                    <button
+                      type="button"
+                      id="menu-admin-view-btn"
+                      onClick={handleAdminOptionClick}
+                      className={`w-full text-left px-4 py-3 text-xs font-medium flex items-center justify-between transition-colors hover:bg-slate-50 active:bg-slate-100 cursor-pointer ${
+                        isAdminMode ? 'text-indigo-700 bg-indigo-50/70 border-l-4 border-indigo-600' : 'text-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            isAdminMode ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {isAdminMode ? (
+                            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                          ) : (
+                            <Shield className="w-4 h-4 text-slate-600" />
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-sm block text-slate-900">Admin View</span>
+                          <span className="text-[11px] text-slate-500 block">
+                            {isAdminMode ? 'এডমিন মোড টগল করুন' : 'পাসকোড দিয়ে আনলক করুন (1919131514)'}
+                          </span>
+                        </div>
+                      </div>
                       {isAdminMode ? (
-                        <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                        <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold shadow-2xs">
+                          ACTIVE
+                        </span>
                       ) : (
-                        <Shield className="w-4 h-4 text-indigo-600 shrink-0" />
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium border border-slate-200">
+                          লকড 🔒
+                        </span>
                       )}
-                      <div>
-                        <span className="font-semibold block">Admin View</span>
-                        <span className="text-[10px] text-slate-400 block">
-                          {isAdminMode ? 'এডমিন মোড টগল করুন' : 'পাসকোড: 1919131514'}
+                    </button>
+
+                    {/* Option 1b: Centralized Admin Dashboard (All Students) */}
+                    {isAdminMode && (
+                      <button
+                        type="button"
+                        id="menu-central-admin-btn"
+                        onClick={handleCentralAdminClick}
+                        className="w-full text-left px-4 py-3 text-xs font-medium text-emerald-800 hover:bg-emerald-50/70 active:bg-emerald-100/70 flex items-center justify-between transition-colors cursor-pointer border-t border-slate-50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                            <LayoutDashboard className="w-4 h-4 text-emerald-600" />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-sm block text-slate-900">Student Registry & Hub</span>
+                            <span className="text-[11px] text-slate-500 block">
+                              সকল শিক্ষার্থীর রিয়েল-টাইম ডাটা
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">
+                          Open Hub
                         </span>
-                      </div>
-                    </div>
-                    {isAdminMode ? (
-                      <span className="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded font-bold">
-                        ON
-                      </span>
-                    ) : (
-                      <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium">
-                        লকড
-                      </span>
+                      </button>
                     )}
-                  </button>
 
-                  {/* Option 1b: Centralized Admin Dashboard (All Students) */}
-                  {isAdminMode && (
+                    {/* Option 2: Gallery Card Export */}
                     <button
                       type="button"
-                      id="menu-central-admin-btn"
-                      onClick={handleCentralAdminClick}
-                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50/60 flex items-center gap-2.5 transition-colors"
+                      id="menu-export-gallery-btn"
+                      onClick={handleSnapshotClick}
+                      className="w-full text-left px-4 py-3 text-xs font-medium text-slate-800 hover:bg-slate-50 active:bg-slate-100 flex items-center gap-3 transition-colors cursor-pointer"
                     >
-                      <LayoutDashboard className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
+                        <ImageIcon className="w-4 h-4 text-teal-600" />
+                      </div>
                       <div>
-                        <span className="font-semibold block">Student Registry & Hub</span>
-                        <span className="text-[10px] text-slate-400 block">
-                          সকল শিক্ষার্থীর রিয়েল-টাইম ডাটা
+                        <span className="font-semibold text-sm block text-slate-900">গ্যালারি কার্ড এক্সপোর্ট</span>
+                        <span className="text-[11px] text-slate-500 block">
+                          ফোনের গ্যালারিতে সেভ করার ছবি কার্ড
                         </span>
                       </div>
                     </button>
-                  )}
 
-                  {/* Option 2: Gallery Card Export */}
-                  <button
-                    type="button"
-                    id="menu-export-gallery-btn"
-                    onClick={handleSnapshotClick}
-                    className="w-full text-left px-3.5 py-2.5 text-xs font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/60 flex items-center gap-2.5 transition-colors"
-                  >
-                    <ImageIcon className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
-                      <span className="font-semibold block">গ্যালারি ইমেজ এক্সপোর্ট</span>
-                      <span className="text-[10px] text-slate-400 block">
-                        ফোনের গ্যালারিতে সেভ করার ছবি কার্ড
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Option 3: Reset Progress */}
-                  <button
-                    type="button"
-                    id="menu-reset-progress-btn"
-                    onClick={handleResetProgressClick}
-                    className="w-full text-left px-3.5 py-2.5 text-xs font-medium text-slate-700 hover:text-amber-700 hover:bg-amber-50/60 flex items-center gap-2.5 transition-colors"
-                  >
-                    <RotateCcw className="w-4 h-4 text-amber-500 shrink-0" />
-                    <div>
-                      <span className="font-semibold block">Reset Progress</span>
-                      <span className="text-[10px] text-slate-400 block">
-                        মাইলস্টোন বা সম্পূর্ণ সিলেবাস রিসেট
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Option 4: App Info */}
-                  <button
-                    type="button"
-                    id="menu-app-info-btn"
-                    onClick={handleAppInfoClick}
-                    className="w-full text-left px-3.5 py-2.5 text-xs font-medium text-slate-700 hover:text-indigo-700 hover:bg-indigo-50/50 flex items-center gap-2.5 transition-colors"
-                  >
-                    <Info className="w-4 h-4 text-indigo-500 shrink-0" />
-                    <div>
-                      <span className="font-semibold block">App Info</span>
-                      <span className="text-[10px] text-slate-400 block">
-                        SSC 2028 ট্র্যাকার তথ্য ও PWA স্ট্যাটাস
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Auth action if not logged in */}
-                  {!currentUser ? (
+                    {/* Option 3: Reset Progress */}
                     <button
                       type="button"
-                      id="menu-login-btn"
-                      onClick={() => {
-                        setShowOptionsMenu(false);
-                        onOpenAuthModal();
-                      }}
-                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50 flex items-center gap-2.5 border-t border-slate-100"
+                      id="menu-reset-progress-btn"
+                      onClick={handleResetProgressClick}
+                      className="w-full text-left px-4 py-3 text-xs font-medium text-slate-800 hover:bg-amber-50/70 active:bg-amber-100/70 flex items-center gap-3 transition-colors cursor-pointer"
                     >
-                      <LogIn className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>ক্লাউড অ্যাকাউন্টে লগইন</span>
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                        <RotateCcw className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-sm block text-slate-900">Reset Progress</span>
+                        <span className="text-[11px] text-slate-500 block">
+                          মাইলস্টোন বা সম্পূর্ণ সিলেবাস রিসেট
+                        </span>
+                      </div>
                     </button>
-                  ) : null}
 
-                  {/* Mobile/Tablet JSON Export/Import */}
-                  <div className="my-1 border-t border-slate-100" />
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowOptionsMenu(false);
-                      onExportData();
-                    }}
-                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-2.5"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-400" />
-                    <span>ব্যাকআপ ডাউনলোড (JSON)</span>
-                  </button>
+                    {/* Option 4: App Info */}
+                    <button
+                      type="button"
+                      id="menu-app-info-btn"
+                      onClick={handleAppInfoClick}
+                      className="w-full text-left px-4 py-3 text-xs font-medium text-slate-800 hover:bg-indigo-50/70 active:bg-indigo-100/70 flex items-center gap-3 transition-colors cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                        <Info className="w-4 h-4 text-indigo-600" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-sm block text-slate-900">App Info</span>
+                        <span className="text-[11px] text-slate-500 block">
+                          SSC 2028 ট্র্যাকার তথ্য ও PWA স্ট্যাটাস
+                        </span>
+                      </div>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowOptionsMenu(false);
-                      fileInputRef.current?.click();
-                    }}
-                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-2.5"
-                  >
-                    <Upload className="w-3.5 h-3.5 text-slate-400" />
-                    <span>ব্যাকআপ রিস্টোর (JSON)</span>
-                  </button>
-                </div>
+                    {/* Auth action if not logged in */}
+                    {!currentUser && (
+                      <button
+                        type="button"
+                        id="menu-login-btn"
+                        onClick={() => {
+                          setShowOptionsMenu(false);
+                          onOpenAuthModal();
+                        }}
+                        className="w-full text-left px-4 py-3 text-xs font-medium text-indigo-700 hover:bg-indigo-50 active:bg-indigo-100 flex items-center gap-3 border-t border-slate-100 transition-colors cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                          <LogIn className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <div>
+                          <span className="font-semibold text-sm block text-indigo-950">ক্লাউড লগইন / সাইন আপ</span>
+                          <span className="text-[11px] text-indigo-600/80 block">
+                            গুগল, ফেসবুক বা মোবাইল দিয়ে সিঙ্ক
+                          </span>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Backup & Restore JSON Section */}
+                    <div className="my-1 border-t border-slate-100" />
+
+                    <div className="px-3 py-2">
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-1">
+                        ব্যাকআপ ফাইল (JSON)
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowOptionsMenu(false);
+                            onExportData();
+                          }}
+                          className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 transition-colors border border-slate-200 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <span>ডাউনলোড</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowOptionsMenu(false);
+                            fileInputRef.current?.click();
+                          }}
+                          className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 transition-colors border border-slate-200 cursor-pointer"
+                        >
+                          <Upload className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <span>রিস্টোর</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </div>

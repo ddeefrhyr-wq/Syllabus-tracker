@@ -1,6 +1,7 @@
 export interface StudentProfile {
   student_id: string;
   full_name: string;
+  username?: string;
   ssc_batch: string;
   group: string;
   target_gpa: string;
@@ -48,6 +49,7 @@ export interface AppData {
 export interface UserSummaryRecord {
   uid: string;
   displayName: string;
+  username?: string;
   email?: string;
   phoneNumber?: string;
   authProvider?: string;

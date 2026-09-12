@@ -1,23 +1,58 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Mail, Lock, User, AlertCircle, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  Mail,
+  Lock,
+  User,
+  AlertCircle,
+  ArrowRight,
+  Sparkles,
+  Phone,
+  Shield,
+  KeyRound,
+  RefreshCw,
+  CheckCircle2,
+} from 'lucide-react';
+import { ConfirmationResult } from '../lib/firebase';
 
 interface AuthModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
   defaultMode?: 'login' | 'register';
+  isMandatory?: boolean;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   defaultMode = 'login',
+  isMandatory = false,
 }) => {
-  const { signInWithGoogle, signInWithFacebook, signInWithEmail, registerWithEmail } = useAuth();
+  const {
+    signInWithGoogle,
+    signInWithFacebook,
+    signInWithEmail,
+    registerWithEmail,
+    setupPhoneRecaptcha,
+    sendPhoneOtp,
+    confirmPhoneOtp,
+  } = useAuth();
+
   const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
+  const [authMethod, setAuthMethod] = useState<'social_email' | 'phone'>('social_email');
+
+  // Email/Password state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Phone Auth state
+  const [phoneNumber, setPhoneNumber] = useState('+880');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -39,13 +74,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else {
         await signInWithEmail(email, password);
       }
-      onClose();
+      if (onClose) onClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'লগইন ব্যর্থ হয়েছে।';
       if (message.includes('auth/invalid-credential') || message.includes('auth/wrong-password')) {
         setError('ভুল ইমেইল বা পাসওয়ার্ড প্রদান করা হয়েছে।');
       } else if (message.includes('auth/email-already-in-use')) {
-        setError('এই ইমেইলটি ইতিমধ্যে নিবন্ধিত রয়েছে।');
+        setError('এই ইমেইলটি ইতিমধ্যে নিবন্ধিত রয়েছে। অনুগ্রহ করে লগইন করুন।');
       } else if (message.includes('auth/weak-password')) {
         setError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
       } else {
@@ -61,7 +96,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
     try {
       await signInWithGoogle();
-      onClose();
+      if (onClose) onClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Google সাইন-ইন ব্যর্থ হয়েছে';
       setError(message);
@@ -75,7 +110,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
     try {
       await signInWithFacebook();
-      onClose();
+      if (onClose) onClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Facebook সাইন-ইন ব্যর্থ হয়েছে';
       setError(message);
@@ -84,10 +119,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
+  // Phone Auth: Send OTP
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      let formatted = phoneNumber.trim();
+      if (!formatted.startsWith('+')) {
+        formatted = `+880${formatted.replace(/^0+/, '')}`;
+      }
+
+      const verifier = setupPhoneRecaptcha('recaptcha-container');
+      const confirmation = await sendPhoneOtp(formatted, verifier);
+      setConfirmationResult(confirmation);
+      setOtpSent(true);
+    } catch (err: unknown) {
+      console.error('Phone sign-in error:', err);
+      const message = err instanceof Error ? err.message : 'ওটিপি পাঠাতে ব্যর্থ হয়েছে।';
+      if (message.includes('auth/invalid-phone-number')) {
+        setError('সঠিক মোবাইল নম্বর প্রদান করুন (যেমন: +88017XXXXXXXX)');
+      } else if (message.includes('auth/too-many-requests')) {
+        setError('অতিরিক্ত চেষ্টার কারণে সাময়িকভাবে বন্ধ আছে। কিছু পর আবার চেষ্টা করুন।');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Phone Auth: Verify OTP
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmationResult) return;
+    setError('');
+    setLoading(true);
+
+    try {
+      await confirmPhoneOtp(confirmationResult, verificationCode.trim());
+      if (onClose) onClose();
+    } catch (err: unknown) {
+      console.error('OTP verify error:', err);
+      const message = err instanceof Error ? err.message : 'ওটিপি কোড সঠিক নয়।';
+      if (message.includes('auth/invalid-verification-code')) {
+        setError('ভুল ওটিপি কোড! আবার চেষ্টা করুন।');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       id="auth-modal-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto"
     >
       <div
         id="auth-modal-card"
@@ -100,20 +189,66 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <Sparkles className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <h2 className="text-base font-bold leading-tight">
-                {mode === 'login' ? 'অ্যাকাউন্টে প্রবেশ করুন' : 'নতুন অ্যাকাউন্ট তৈরি করুন'}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold leading-tight">
+                  {mode === 'login' ? 'অ্যাকাউন্টে প্রবেশ করুন' : 'নতুন অ্যাকাউন্ট তৈরি করুন'}
+                </h2>
+                {isMandatory && (
+                  <span className="text-[10px] font-bold bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full uppercase">
+                    বাধ্যতামূলক
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-indigo-200">
-                ক্লাউড ব্যাকআপ এবং রিয়েল-টাইম সিলেবাস সিঙ্ক
+                {isMandatory
+                  ? 'সিলেবাস ট্র্যাকার ব্যবহার করতে অনুগ্রহ করে লগইন বা রেজিস্টার করুন'
+                  : 'ক্লাউড ব্যাকআপ এবং রিয়েল-টাইম সিলেবাস সিঙ্ক'}
               </p>
             </div>
           </div>
+          {/* Close button only if NOT mandatory */}
+          {!isMandatory && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Method Selector Tabs */}
+        <div className="flex border-b border-slate-200 bg-slate-50 text-xs font-semibold">
           <button
             type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+            onClick={() => {
+              setAuthMethod('social_email');
+              setError('');
+            }}
+            className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+              authMethod === 'social_email'
+                ? 'bg-white text-indigo-700 border-b-2 border-indigo-600 font-bold shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
-            <X className="w-5 h-5" />
+            <Mail className="w-4 h-4" />
+            <span>Google, Facebook ও Email</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMethod('phone');
+              setError('');
+            }}
+            className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+              authMethod === 'phone'
+                ? 'bg-white text-indigo-700 border-b-2 border-indigo-600 font-bold shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Phone className="w-4 h-4" />
+            <span>মোবাইল নম্বর (SMS OTP)</span>
           </button>
         </div>
 
@@ -126,159 +261,271 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {/* Social Logins */}
-          <div className="space-y-2.5">
-            {/* Google */}
-            <button
-              type="button"
-              id="google-login-btn"
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-3 transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
-            >
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.1-1.6.4-2.3L1.9 7.3C.7 9.7 0 12 0 14.5s.7 4.8 1.9 7.2l3.7-2.9z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 17C3.7 20.7 7.5 24 12 24z"
-                />
-              </svg>
-              <span>Gmail / Google দিয়ে লগইন করুন</span>
-            </button>
+          {authMethod === 'social_email' ? (
+            <>
+              {/* Social Logins: Google & Facebook */}
+              <div className="space-y-2.5">
+                {/* Google */}
+                <button
+                  type="button"
+                  id="google-login-btn"
+                  onClick={handleGoogleLogin}
+                  disabled={loading}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-3 transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#EA4335"
+                      d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
+                    />
+                    <path
+                      fill="#4285F4"
+                      d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.1-1.6.4-2.3L1.9 7.3C.7 9.7 0 12 0 14.5s.7 4.8 1.9 7.2l3.7-2.9z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 17C3.7 20.7 7.5 24 12 24z"
+                    />
+                  </svg>
+                  <span>Gmail / Google দিয়ে লগইন করুন</span>
+                </button>
 
-            {/* Facebook */}
-            <button
-              type="button"
-              id="facebook-login-btn"
-              onClick={handleFacebookLogin}
-              disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl border border-[#1877F2]/20 bg-[#1877F2] hover:bg-[#166fe5] text-white font-semibold text-xs flex items-center justify-center gap-3 transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
-            >
-              <svg className="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span>Facebook দিয়ে লগইন করুন</span>
-            </button>
-          </div>
+                {/* Facebook */}
+                <button
+                  type="button"
+                  id="facebook-login-btn"
+                  onClick={handleFacebookLogin}
+                  disabled={loading}
+                  className="w-full py-2.5 px-4 rounded-xl border border-[#1877F2]/20 bg-[#1877F2] hover:bg-[#166fe5] text-white font-semibold text-xs flex items-center justify-center gap-3 transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
+                >
+                  <svg className="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                  <span>Facebook দিয়ে লগইন করুন</span>
+                </button>
+              </div>
 
-          <div className="flex items-center gap-3 my-1">
-            <div className="h-px bg-slate-200 flex-1" />
-            <span className="text-[11px] text-slate-400 uppercase font-medium tracking-wider">
-              অথবা ইমেইল / মোবাইল
-            </span>
-            <div className="h-px bg-slate-200 flex-1" />
-          </div>
+              <div className="flex items-center gap-3 my-1">
+                <div className="h-px bg-slate-200 flex-1" />
+                <span className="text-[11px] text-slate-400 uppercase font-medium tracking-wider">
+                  অথবা ইমেইল ও পাসওয়ার্ড
+                </span>
+                <div className="h-px bg-slate-200 flex-1" />
+              </div>
 
-          {/* Email / Password Form */}
-          <form onSubmit={handleEmailAuth} className="space-y-3.5">
-            {mode === 'register' && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  পুরো নাম (Full Name)
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="যেমন: সাকিব হাসান"
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                  />
+              {/* Email / Password Form */}
+              <form onSubmit={handleEmailAuth} className="space-y-3.5">
+                {mode === 'register' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      পুরো নাম (Full Name)
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        required
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="যেমন: সাকিব হাসান"
+                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    ইমেইল ঠিকানা (Email)
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="student@example.com"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                ইমেইল ঠিকানা (Email)
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@example.com"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                />
-              </div>
-            </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    পাসওয়ার্ড (Password)
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="কমপক্ষে ৬টি অক্ষর"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                পাসওয়ার্ড (Password)
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="কমপক্ষে ৬টি অক্ষর"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              id="submit-auth-btn"
-              disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-60"
-            >
-              <span>{mode === 'login' ? 'লগইন করুন' : 'অ্যাকাউন্ট রেজিস্টার করুন'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          {/* Toggle login / register */}
-          <div className="text-center pt-2 border-t border-slate-100">
-            {mode === 'login' ? (
-              <p className="text-xs text-slate-600">
-                অ্যাকাউন্ট নেই?{' '}
                 <button
-                  type="button"
-                  onClick={() => {
-                    setMode('register');
-                    setError('');
-                  }}
-                  className="text-indigo-600 font-semibold hover:underline"
+                  type="submit"
+                  id="submit-auth-btn"
+                  disabled={loading}
+                  className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-60"
                 >
-                  নতুন অ্যাকাউন্ট খুলুন
+                  {loading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <span>{mode === 'login' ? 'লগইন করুন' : 'অ্যাকাউন্ট রেজিস্টার করুন'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
-              </p>
-            ) : (
-              <p className="text-xs text-slate-600">
-                ইতিমধ্যে অ্যাকাউন্ট আছে?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('login');
-                    setError('');
-                  }}
-                  className="text-indigo-600 font-semibold hover:underline"
-                >
-                  লগইন করুন
-                </button>
-              </p>
-            )}
-          </div>
+              </form>
+
+              {/* Toggle login / register */}
+              <div className="text-center pt-2 border-t border-slate-100">
+                {mode === 'login' ? (
+                  <p className="text-xs text-slate-600">
+                    নতুন শিক্ষার্থী?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('register');
+                        setError('');
+                      }}
+                      className="text-indigo-600 font-semibold hover:underline cursor-pointer"
+                    >
+                      নতুন অ্যাকাউন্ট নিবন্ধন করুন
+                    </button>
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-600">
+                    ইতিমধ্যে অ্যাকাউন্ট আছে?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('login');
+                        setError('');
+                      }}
+                      className="text-indigo-600 font-semibold hover:underline cursor-pointer"
+                    >
+                      লগইন করুন
+                    </button>
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            /* Phone Number / SMS OTP Flow */
+            <div className="space-y-4">
+              <div id="recaptcha-container" />
+
+              {!otpSent ? (
+                <form onSubmit={handleSendOtp} className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      মোবাইল নম্বর (Phone Number with +880)
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="tel"
+                        required
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="+88017XXXXXXXX"
+                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-medium"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      উদাহরণ: +8801712345678 (বাংলাদেশ কান্ট্রি কোড সহ)
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    id="send-otp-btn"
+                    disabled={loading || !phoneNumber.trim()}
+                    className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-60"
+                  >
+                    {loading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <span>ওটিপি কোড পাঠান (Send SMS OTP)</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-3.5">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      <strong>{phoneNumber}</strong> নম্বরে ৬-সংখ্যার এসএমএস কোড পাঠানো হয়েছে।
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      এসএমএস কোড (6-Digit OTP Code)
+                    </label>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        placeholder="123456"
+                        className="w-full pl-9 pr-3 py-2.5 text-sm tracking-widest font-mono rounded-xl border border-slate-300 focus:outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-center font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    id="verify-otp-btn"
+                    disabled={loading || verificationCode.trim().length < 6}
+                    className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-60"
+                  >
+                    {loading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <span>কোড যাচাই করে প্রবেশ করুন</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpSent(false);
+                        setVerificationCode('');
+                        setError('');
+                      }}
+                      className="text-xs text-slate-500 hover:text-indigo-600 underline cursor-pointer"
+                    >
+                      ভুল নম্বর? পরিবর্তন করুন
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
